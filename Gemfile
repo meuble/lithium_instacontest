@@ -6,3 +6,4 @@ gem "instagram"
 gem 'haml'
 gem 'activerecord'
 gem 'mysql2'
+gem 'sqlite3'

@@ -2,7 +2,6 @@ require "sinatra"
 require "instagram"
 require "active_record"
 require 'yaml'
-require "active_record"
 
 enable :sessions
 
