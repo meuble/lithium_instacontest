@@ -1,0 +1,9 @@
+database:
+  adapter: 'mysql2' # or 'postgresql' or 'sqlite3'
+  host: 'localhost'
+  database: 'your_database'
+  username: 'your_username'
+  password: 'your_password'
+instagram:
+  client_id: "your client id"
+  client_secret: "your secret"
