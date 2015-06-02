@@ -35,6 +35,24 @@ ap "#{url}#{path}"
     self.parse(response)
   end
 
+  def multipart_request(user_id, path, multipart = {})
+    url = "https://"
+    url += self.data['domain']
+    url += "/restapi/vc"
+    
+    query = {}
+    query = query.merge({"restapi.response_format" => "json"})
+    query = query.merge({"credentials.identity_user" => "/users/id/#{user_id}"})
+    query = query.merge({"restapi.session_key" => self.session_key}) if self.session_key
+ap "#{url}#{path}"
+    ap query
+    response = RestClient.post("#{url}#{path}?#{query.map{|k,v| "#{k}=#{v}"}.join('&')}", multipart)
+
+    self.parse(response)
+  end
+
+
+
   def parse(json)
     json = JSON.parse(json)
     raise NoResponseError unless json['response']

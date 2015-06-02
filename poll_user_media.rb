@@ -1,6 +1,9 @@
 require "instagram"
 require "active_record"
+require "awesome_print"
 require 'yaml'
+require './lithium_api.rb'
+require 'open-uri'
 
 database_config_file = File.join(File.dirname(File.expand_path(__FILE__)), 'config', 'database.yml')
 config_file = File.join(File.dirname(File.expand_path(__FILE__)), 'config', 'config.yml')
@@ -18,27 +21,7 @@ class User < ActiveRecord::Base
   validates_presence_of :lithium_id, :instagram_username, :instagram_token
 end
 
-
 # function that returns hashtagged_media when it exists
-
-def get_user_recent_hashtagged_media(user, hashtags)
-  client = Instagram.client(:access_token => user.instagram_token)
-  user = client.user
-  hashtagged_media = [];
-  new_max_id = user.instagram_max_id
-  client.user_recent_media(:max_id => user.instagram_max_id) do |media_item|
-  	#new_max_id = user.instagram_max_id == nil or media_item.id > new_max_id ? media_item.id : new_max_id
-  	hashtags.each do |hashtag|
-  		print hash_tag
-    	if check_media(media_item, hashtag)
-      		hashtagged_media << media_item
-      	end
-    end
-  end
-  user.instagram_max_id = new_max_id;
-  user.save
-  return hashtagged_media
-end
 
 def check_media(media_item, hash_tag)
 	if media_item.type == 'image' and media_item.caption.to_s.include? hashtag
@@ -50,15 +33,23 @@ end
 
 # check hashtagged media for each user
 
+lithium_client = Lithium.new
+lithium_client.get_session_key
+
 User.all.each do |user|
-  print user
-  #the code here is called once for each user
-  # user is accessible by 'user' variable
-  hashtags = ['#provo','#lithium'];
-  media_item = get_user_recent_hashtagged_media(user, hashtags)
-  if media_item == nil
-  	print "NOT FOUND"
-  else 
-  	print media_item
+  client = Instagram.client(:access_token => user.instagram_token)
+  client.user_media_feed.each do |media|
+    if media.type == 'image' && media.caption.to_s.include?("#hausguest")
+
+      file = File.open("temp.jpg", "w") do |f|
+        f.write open(media['images']['standard_resolution']['url']).read
+      end
+
+      image_response = lithium_client.multipart_request(user.lithium_id, "/users/id/#{user.lithium_id}/media/albums/default/public/images/upload", {"image.content" => File.new("temp.jpg", "rb")})
+      ap image_response
+
+      response = lithium_client.request("/boards/id/Instacontest/messages/post", :post, {"message.subject" => media.caption.text.to_s, "message.author" => "id/#{user.lithium_id}", "message.body" => "<img data-image-uid=\"#{image_response["image"]["id"]["$"]}\" data-viewable-img=\"true\" id=\"display_0\" src=\"#{image_response['image']["url"]["$"]}\">"})
+    end
   end
+
 end
